@@ -1,0 +1,3 @@
+[submodule "upng"]
+	path = upng
+	url = https://github.com/elanthis/upng.git
