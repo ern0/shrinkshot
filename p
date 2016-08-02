@@ -4,11 +4,11 @@ clear
 g++ \
 	-x c++ \
 	-c upng/upng.c \
-	-o upng.o
+	-o /tmp/upng.o
 
 g++ \
 	-o shrinkshot \
-	upng.o \
+	/tmp/upng.o \
 	shrinkshot.cpp
 
 strip shrinkshot
