@@ -31,7 +31,9 @@ void proc(upng_t* upng) {
 
 	fprintf(stderr,"%d x %d :: %d \n",width,height,bytesPerPix);
 
-	printf("%d \n",pix(0,0));
+	for (int n = 0; n < 33; n++) {
+		printf("%d: %d \n",n,pix(n,n));
+	}
 
 } // proc()
 
