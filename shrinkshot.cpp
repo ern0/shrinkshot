@@ -136,6 +136,34 @@ class ShrinkShot {
 
 			printf("%c: outer=%d count=%d value=%d \n",mod,outer,diffCount[outer],diffValue[outer]);
 
+		} // for outer
+
+		int gapPos = -1;
+		int gapLen = -1;
+		for (int outer = 1; outer < outerDim; outer++) {
+
+			if (diffCount[outer] > 0) {
+
+				if (gapPos == -1) continue;
+				
+				if (gapLen > 4) {
+					printf("gap side=%c pos=%d len=%d \n",mod,gapPos,gapLen);
+					gapPos = -1;
+					gapLen = -1;
+				}
+
+			} // if diff
+
+			else {
+				
+				if (gapPos == -1) {
+					gapPos = outer;
+					gapLen = 0;
+				}
+
+				gapLen++;
+
+			} // else diff
 
 		} // for outer
 
