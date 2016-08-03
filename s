@@ -1,3 +1,3 @@
 #!/bin/bash
 
-./shrinkshot test/c*
+./shrinkshot test/d*
