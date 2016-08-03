@@ -13,9 +13,6 @@ class ShrinkShot {
 	const unsigned char* buffer;
 	int bytesPerPix;
 
-	int* diffCount;
-	int* diffValue;
-
 	int hShrinkPos;
 	int hShrinkLength;
 	int vShrinkPos;
@@ -101,13 +98,49 @@ class ShrinkShot {
 
 		fprintf(stderr,"%d x %d \n",width,height);
 
-		procSide(RET &hShrinkPos,RET &hShrinkLength,'h',width,height);
-		procSide(RET &vShrinkPos,RET &vShrinkLength,'v',height,width);
+		procSide('h',width,height);
+		procSide('v',height,width);
 
 	} // proc()
 
 
-	private: void procSide(RET int* pos,RET int* length,char mod,int pri,int sec) {
+	private: void procSide(char mod,int outerDim,int innerDim) {
+
+		int* diffCount = (int*)malloc(outerDim * sizeof(int));
+		int* diffValue = (int*)malloc(outerDim * sizeof(int));
+
+		for (int outer = 1; outer < outerDim; outer++) {
+			
+			diffCount[outer] = 0;
+			diffValue[outer] = 0;
+
+			for (int inner = 0; inner < innerDim; inner++) {
+
+				int actual;
+				int neighbour;
+
+				if (mod == 'h') {
+					actual = gray(inner,outer);
+					neighbour = gray(inner,outer - 1);
+				} else {
+					actual = gray(outer,inner);
+					neighbour = gray(outer - 1,inner);					
+				}
+
+				int diff = actual - neighbour;
+				if (diff < 0) diff = -diff;
+				if (diff > 4) diffCount[outer]++;
+				diffValue[outer] += diff;
+
+			} // for inner
+
+			printf("%c: outer=%d count=%d value=%d \n",mod,outer,diffCount[outer],diffValue[outer]);
+
+
+		} // for outer
+
+		free((void*)diffCount);
+		free((void*)diffValue);
 
 	} // procSide()
 
