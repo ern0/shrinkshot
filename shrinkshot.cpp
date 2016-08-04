@@ -192,8 +192,6 @@ class ShrinkShot {
 	private:
 	void printResult(side_t side,int gapPos,int gapLen) {
 
-		//if (side == 'v') return;
-
 		gapPos += 1;
 		gapLen -= 1;
 
