@@ -2,7 +2,7 @@
 # include <stdlib.h>
 # include <unistd.h>
 # include "upng/upng.h"
-# define DEBUG (0)
+# define DEBUG (1)
 
 
 class ShrinkShot {
