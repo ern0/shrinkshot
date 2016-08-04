@@ -1,3 +1,5 @@
 #!/bin/bash
 
-./shrinkshot test/d* d-result.png
+
+convert test/a* `./shrinkshot test/a*` result.png
+open result.png

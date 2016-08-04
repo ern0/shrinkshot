@@ -12,7 +12,6 @@ class ShrinkShot {
 	private:
 	
 	const char* sfnam;
-	const char* tfnam;
 
 	int width;
 	int height;
@@ -32,13 +31,12 @@ class ShrinkShot {
 
 	public:	int main(int argc,char* argv[]) {
 
-		if (argc != 3) {
-			fprintf(stderr,"specify source and target filename \n");
+		if (argc != 2) {
+			fprintf(stderr,"specify filename \n");
 			exit(0);
 		}
 
 		sfnam = argv[1];
-		tfnam = argv[2];
 
 		upng_t* upng;
 
@@ -203,7 +201,30 @@ class ShrinkShot {
 	private:
 	void printResult(mod_t mod,int gapPos,int gapLen) {
 
-		printf("%c %d %d \n",mod,gapPos,gapLen);
+		//convert image.jpg -chop 20x0+120+0 slice.jpg
+
+		gapPos += 2;
+		gapLen -= 2;
+
+		if (mod == 'h') {
+
+			printf(
+				" -chop %dx0+%d+0 "
+				,gapLen
+				,gapPos
+			);
+
+		} // if h 
+
+		else { // mod == 'v'
+
+			printf(
+				" -chop 0x%d+0+%d "
+				,gapLen
+				,gapPos
+			);
+
+		} // if v
 
 	} // printResult()
 
