@@ -2,12 +2,12 @@
 # include <stdlib.h>
 # include <unistd.h>
 # include "upng/upng.h"
-# define DEBUG (1)
+# define DEBUG (0)
 
 
 class ShrinkShot {
 
-	typedef char mod_t;
+	typedef char side_t;
 
 	private:
 	
@@ -18,10 +18,7 @@ class ShrinkShot {
 	const unsigned char* buffer;
 	int bytesPerPix;
 
-	int hShrinkPos;
-	int hShrinkLength;
-	int vShrinkPos;
-	int vShrinkLength;
+	int gapCorrection;
 
 
 	private: void sig() {
@@ -113,7 +110,7 @@ class ShrinkShot {
 	} // proc()
 
 
-	private: void procSide(mod_t mod,int outerDim,int innerDim) {
+	private: void procSide(side_t side,int outerDim,int innerDim) {
 
 		int* diffCount = (int*)malloc(outerDim * sizeof(int));
 		int* diffValue = (int*)malloc(outerDim * sizeof(int));
@@ -128,7 +125,7 @@ class ShrinkShot {
 				int actual;
 				int neighbour;
 
-				if (mod == 'h') {
+				if (side == 'h') {
 					actual = gray(inner,outer);
 					neighbour = gray(inner,outer - 1);
 				} else {
@@ -138,39 +135,33 @@ class ShrinkShot {
 
 				int diff = actual - neighbour;
 				if (diff < 0) diff = -diff;
-				if (diff > 4) diffCount[outer]++;
+				if (diff > 0) diffCount[outer]++;
 				diffValue[outer] += diff;
 
 			} // for inner
 
 			# if DEBUG >= 2
-				fprintf(stderr,"%c: outer=%d count=%d value=%d \n",mod,outer,diffCount[outer],diffValue[outer]);
+				fprintf(stderr,"%c: outer=%d count=%d value=%d \n",side,outer,diffCount[outer],diffValue[outer]);
 			# endif
 
 		} // for outer
 
-		int maxGap = 0;
-		int halfGal = 0;
-
 		int gapPos = -1;
 		int gapLen = -1;
+		gapCorrection = 0;
 		for (int outer = 1; outer < outerDim; outer++) {
 
 			if (diffCount[outer] > 0) {
 
 				if (gapPos == -1) continue; // no gap
 				
-				if (gapLen > 4) {
+				if (gapLen > 0) {
 
 					bool reg = false;
-					if (gapLen > (outerDim / 6)) reg = true;
-					if (gapLen > 10) reg = true; 
+					//if (gapLen > (outerDim / 6)) reg = true;
+					if (gapLen > 2) reg = true; 
 
-					# if DEBUG >= 1
-						fprintf(stderr,"gap side=%c pos=%d len=%d reg=%d \n",mod,gapPos,gapLen,reg);
-					# else 
-						printResult(mod,gapPos,gapLen);
-					# endif
+					if (reg) printResult(side,gapPos,gapLen);
 
 					gapPos = -1;
 					gapLen = -1;
@@ -199,14 +190,21 @@ class ShrinkShot {
 
 
 	private:
-	void printResult(mod_t mod,int gapPos,int gapLen) {
+	void printResult(side_t side,int gapPos,int gapLen) {
 
-		//convert image.jpg -chop 20x0+120+0 slice.jpg
+		//if (side == 'v') return;
 
-		gapPos += 2;
-		gapLen -= 2;
+		gapPos += 1;
+		gapLen -= 1;
 
-		if (mod == 'h') {
+		gapPos -= gapCorrection;
+		gapCorrection += gapLen;
+
+		# if DEBUG >= 1
+			fprintf(stderr,"gap side=%c pos=%d len=%d \n",side,gapPos,gapLen);
+		# endif
+
+		if (side == 'h') {
 
 			printf(
 				" -chop %dx0+%d+0 "
@@ -216,7 +214,7 @@ class ShrinkShot {
 
 		} // if h 
 
-		else { // mod == 'v'
+		else { // side == 'v'
 
 			printf(
 				" -chop 0x%d+0+%d "

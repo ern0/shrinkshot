@@ -1,4 +1,6 @@
 #!/bin/bash
 
-convert test/d* `./shrinkshot test/d*` /tmp/result.png
+F=b*
+
+convert test/${F} `./shrinkshot test/${F}` /tmp/result.png
 open /tmp/result.png
