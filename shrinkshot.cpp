@@ -2,12 +2,18 @@
 # include <stdlib.h>
 # include <unistd.h>
 # include "upng/upng.h"
-# define RET
+# define DEBUG (0)
+
 
 class ShrinkShot {
 
+	typedef char mod_t;
+
 	private:
 	
+	const char* sfnam;
+	const char* tfnam;
+
 	int width;
 	int height;
 	const unsigned char* buffer;
@@ -26,14 +32,17 @@ class ShrinkShot {
 
 	public:	int main(int argc,char* argv[]) {
 
-		if (argc != 2) {
-			fprintf(stderr,"specify filename \n");
+		if (argc != 3) {
+			fprintf(stderr,"specify source and target filename \n");
 			exit(0);
 		}
 
+		sfnam = argv[1];
+		tfnam = argv[2];
+
 		upng_t* upng;
 
-		upng = upng_new_from_file(argv[1]);
+		upng = upng_new_from_file(sfnam);
 		if (upng != NULL) {
 			upng_decode(upng);
 			if (upng_get_error(upng) == UPNG_EOK) {
@@ -59,7 +68,7 @@ class ShrinkShot {
 
 			else {
 				sig();
-				fprintf(stderr,"error processing file %s \n",argv[1]);
+				fprintf(stderr,"error processing file %s \n",sfnam);
 				exit(1);
 			}
 
@@ -69,7 +78,7 @@ class ShrinkShot {
 
 		else {
 			sig();
-			fprintf(stderr,"error loading file %s \n",argv[1]);
+			fprintf(stderr,"error loading file %s \n",sfnam);
 			exit(1);
 		}
 
@@ -96,7 +105,9 @@ class ShrinkShot {
 
 	private: void proc(upng_t* upng) {
 
-		fprintf(stderr,"%d x %d \n",width,height);
+		# if DEBUG >= 1
+			fprintf(stderr,"%d x %d \n",width,height);
+		# endif
 
 		procSide('h',width,height);
 		procSide('v',height,width);
@@ -104,7 +115,7 @@ class ShrinkShot {
 	} // proc()
 
 
-	private: void procSide(char mod,int outerDim,int innerDim) {
+	private: void procSide(mod_t mod,int outerDim,int innerDim) {
 
 		int* diffCount = (int*)malloc(outerDim * sizeof(int));
 		int* diffValue = (int*)malloc(outerDim * sizeof(int));
@@ -134,9 +145,14 @@ class ShrinkShot {
 
 			} // for inner
 
-			printf("%c: outer=%d count=%d value=%d \n",mod,outer,diffCount[outer],diffValue[outer]);
+			# if DEBUG >= 2
+				fprintf(stderr,"%c: outer=%d count=%d value=%d \n",mod,outer,diffCount[outer],diffValue[outer]);
+			# endif
 
 		} // for outer
+
+		int maxGap = 0;
+		int halfGal = 0;
 
 		int gapPos = -1;
 		int gapLen = -1;
@@ -144,13 +160,24 @@ class ShrinkShot {
 
 			if (diffCount[outer] > 0) {
 
-				if (gapPos == -1) continue;
+				if (gapPos == -1) continue; // no gap
 				
 				if (gapLen > 4) {
-					printf("gap side=%c pos=%d len=%d \n",mod,gapPos,gapLen);
+
+					bool reg = false;
+					if (gapLen > (outerDim / 6)) reg = true;
+					if (gapLen > 10) reg = true; 
+
+					# if DEBUG >= 1
+						fprintf(stderr,"gap side=%c pos=%d len=%d reg=%d \n",mod,gapPos,gapLen,reg);
+					# else 
+						printResult(mod,gapPos,gapLen);
+					# endif
+
 					gapPos = -1;
 					gapLen = -1;
-				}
+				
+				} // if gap close
 
 			} // if diff
 
@@ -159,9 +186,9 @@ class ShrinkShot {
 				if (gapPos == -1) {
 					gapPos = outer;
 					gapLen = 0;
-				}
+				} // if gap open
 
-				gapLen++;
+				gapLen++; // gap inc
 
 			} // else diff
 
@@ -171,6 +198,14 @@ class ShrinkShot {
 		free((void*)diffValue);
 
 	} // procSide()
+
+
+	private:
+	void printResult(mod_t mod,int gapPos,int gapLen) {
+
+		printf("%c %d %d \n",mod,gapPos,gapLen);
+
+	} // printResult()
 
 
 }; // class ShrinkShot

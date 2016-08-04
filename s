@@ -1,3 +1,3 @@
 #!/bin/bash
 
-./shrinkshot test/d*
+./shrinkshot test/d* d-result.png
