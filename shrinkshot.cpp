@@ -194,7 +194,7 @@ class ShrinkShot {
 
 		gapPos += 1;
 		gapLen -= 1;
-
+ 
 		gapPos -= gapCorrection;
 		gapCorrection += gapLen;
 
