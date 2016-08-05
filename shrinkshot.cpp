@@ -149,33 +149,35 @@ class ShrinkShot {
 		int gapPos = -1;
 		int gapLen = -1;
 		gapCorrection = 0;
+
+		int lastOuter = outerDim - 1;
 		for (int outer = 1; outer < outerDim; outer++) {
 
-			if (diffCount[outer] > 0) {
+			if ( (diffCount[outer] > 0) || (outer == lastOuter) ) {  // if diff: close gap if any
 
-				if (gapPos == -1) continue; // no gap
+				if (gapPos != -1) {  // if there is an open gap
+					if (gapLen > 0) {  // if gap should be closed
+
+						bool reg = false;
+						//if (gapLen > (outerDim / 6)) reg = true;
+						if (gapLen > 2) reg = true; 
+
+						if (reg) printResult(side,gapPos,gapLen);
+
+						gapPos = -1;
+						gapLen = -1;
+					
+					} // if gapLen
+				} // if gapPos
+
+			} // if diffCount[outer]
+
+			else {  // else diff: start or continue gap
 				
-				if (gapLen > 0) {
-
-					bool reg = false;
-					//if (gapLen > (outerDim / 6)) reg = true;
-					if (gapLen > 2) reg = true; 
-
-					if (reg) printResult(side,gapPos,gapLen);
-
-					gapPos = -1;
-					gapLen = -1;
-				
-				} // if gap close
-
-			} // if diff
-
-			else {
-				
-				if (gapPos == -1) {
+				if (gapPos == -1) {  // 
 					gapPos = outer;
 					gapLen = 0;
-				} // if gap open
+				} // if open a gap
 
 				gapLen++; // gap inc
 
