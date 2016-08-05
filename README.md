@@ -1,6 +1,6 @@
 # ShrinkShot
 
-A simple CLI tool to detect and cut out empty areas of an image (screenshot) in order to make them smaller without resizing their content.
+A simple CLI tool to detect and cut out empty areas of an image (screenshot) in order to make it smaller without resizing its content.
 
 ## Features
 
