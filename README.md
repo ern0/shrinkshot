@@ -40,9 +40,7 @@ If any problem occurs, `shrinkshot` prints error messages to `stderr`.
 
 ### Known issues to be fixed
 
-Rightmost and bottom areas will be not removed due to a missing check at the end of the processing. This will be fixed soon.
-
-If you make a screenshot by marking the area by hand (sometimes called snipping tool), empty area detection may fail on background image. A simple solution is by just simply ignore 3-4 pixels on the borders, this hack will be applied soon.
+If you make a screenshot by marking the area by hand (sometimes called snipping tool), empty area detection may fail on background image. A simple solution is just simply ignore 3-4 pixels on the borders, this hack will be applied soon.
 
 ### Enhance distribution
 
