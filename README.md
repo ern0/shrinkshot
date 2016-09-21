@@ -10,6 +10,17 @@ This is not an out-of-box application: the program itself only a CLI tool, which
 
 You may assign a hotkey to yout script, which makes a screenshot from a window, passing through it on shrinkshot+convert, and saves it. Currently, I don't provide this kinda script, as I'm a newbie Mac user and I don't know how to do it.
 
+## Installation
+
+To make it work, first, you should install ImageMagick:
+
+- MacOS: `brew install imagemagick`
+- Debian/Ubuntu Linux: `sudo apt-get install imagemagick` 
+- etc.
+
+Also, don't forget to checkout the `upng` GIT submodule:
+`git submodule update --init --recursive`
+
 ## Usage
 
 By calling `shrinkshot` with a PNG filename specified, it dumps out a bunch of parameters for `convert` (ImageMagick's CLI app):
@@ -18,16 +29,11 @@ $ shrinkshot image.png
 -chop 4x0+2+0 -chop 4x0+11+0 -chop 2x0+19+0 -chop 12x0+26+0 -chop 0x5+0+2 -chop 0x2+0+6 -chop 0x6+0+11
 ```
 
-To make it work, first, you should install ImageMagick:
-
-- MacOS: `brew install imagemagick`
-- Debian/Ubuntu Linux: `sudo apt-get install imagemagick` 
-- etc.
-
-Then you may pass the parameters to `convert` utility>
 ```
 convert image.png `shrinkshot image.png` result.png
 ```
+
+Then you may pass the parameters to `convert` utility>
 
 If any problem occurs, `shrinkshot` prints error messages to `stderr`.
 
