@@ -14,6 +14,3 @@ i686-w64-mingw32-g++ \
 	/tmp/upng-w.o \
 	shrinkshot.cpp \
 	-static \
-
-
-strip shrinkshot
