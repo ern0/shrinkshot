@@ -7,6 +7,7 @@ g++ \
 	-o /tmp/upng.o
 
 g++ \
+	-O3 \
 	-Wno-unused-value \
 	-Wno-unused-comparison \
 	-o shrinkshot \

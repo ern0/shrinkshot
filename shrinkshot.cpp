@@ -1,6 +1,7 @@
 # include <stdio.h>
 # include <stdlib.h>
 # include <unistd.h>
+# include <string>
 # include "upng/upng.h"
 # define DEBUG (0)
 
@@ -11,14 +12,27 @@ class ShrinkShot {
 
 	private:
 	
-	const char* sfnam;
+		const char* sfnam;
+		upng_t* upng;
+		std::string imagemagick;
+		std::string result;
 
-	int width;
-	int height;
-	const unsigned char* buffer;
-	int bytesPerPix;
+		int width;
+		int height;
+		const unsigned char* buffer;
+		int bytesPerPix;
 
-	int gapCorrection;
+		int gapCorrection;
+
+
+	private: void about() {
+		fprintf(
+			stderr,
+			"shrinkshot - shrink images by removing empty regions \n" 
+			"  (best use case: screenshot) \n"
+			"  see https://github.com/ern0/shrinkshot \n"
+		);
+	} // about()
 
 
 	private: void sig() {
@@ -28,16 +42,25 @@ class ShrinkShot {
 
 	public:	int main(int argc,char* argv[]) {
 
-		if (argc != 2) {
-			fprintf(stderr,"specify filename \n");
+		if (argc < 3) {
+			about();
+			fprintf(stderr,"specify source and target filenames \n");
 			exit(0);
 		}
 
-		sfnam = argv[1];
+		prepare();
+		load(argv[1]);
+		proc();
+		convert(argv[1],argv[2]);
+	
+		return 0;
+	} // main()
 
-		upng_t* upng;
 
-		upng = upng_new_from_file(sfnam);
+	private: void load(char* fnam) {
+
+		upng = upng_new_from_file(fnam);
+	
 		if (upng != NULL) {
 			upng_decode(upng);
 			if (upng_get_error(upng) == UPNG_EOK) {
@@ -57,13 +80,12 @@ class ShrinkShot {
 				}
 
 				bytesPerPix = bpp >> 3;
-				proc(upng);
 			
 			} // if okay
 
 			else {
 				sig();
-				fprintf(stderr,"error processing file %s \n",sfnam);
+				fprintf(stderr,"error processing file %s \n",fnam);
 				exit(1);
 			}
 
@@ -73,32 +95,14 @@ class ShrinkShot {
 
 		else {
 			sig();
-			fprintf(stderr,"error loading file %s \n",sfnam);
+			fprintf(stderr,"error loading file %s \n",fnam);
 			exit(1);
 		}
 
-		return 0;
-	} // main()
+	} // loadPng()
 
 
-	private: int gray(int y,int x) {
-
-		unsigned int offset = bytesPerPix * ( (y * width) + x );
-		unsigned int value = buffer[offset];
-		value += buffer[1 + offset];
-		value += buffer[2 + offset];
-		if (bytesPerPix == 4) {
-			value += buffer[3 + offset];
-		} else {
-			value += buffer[1 + offset];
-		}
-		value = value >> 2;
-
-		return value;
-	} // gray()
-
-
-	private: void proc(upng_t* upng) {
+	private: void proc() {
 
 		# if DEBUG >= 1
 			fprintf(stderr,"%d x %d \n",width,height);
@@ -149,35 +153,33 @@ class ShrinkShot {
 		int gapPos = -1;
 		int gapLen = -1;
 		gapCorrection = 0;
-
-		int lastOuter = outerDim - 1;
 		for (int outer = 1; outer < outerDim; outer++) {
 
-			if ( (diffCount[outer] > 0) || (outer == lastOuter) ) {  // if diff: close gap if any
+			if (diffCount[outer] > 0) {
 
-				if (gapPos != -1) {  // if there is an open gap
-					if (gapLen > 0) {  // if gap should be closed
-
-						bool reg = false;
-						//if (gapLen > (outerDim / 6)) reg = true;
-						if (gapLen > 2) reg = true; 
-
-						if (reg) printResult(side,gapPos,gapLen);
-
-						gapPos = -1;
-						gapLen = -1;
-					
-					} // if gapLen
-				} // if gapPos
-
-			} // if diffCount[outer]
-
-			else {  // else diff: start or continue gap
+				if (gapPos == -1) continue; // no gap
 				
-				if (gapPos == -1) {  // 
+				if (gapLen > 0) {
+
+					bool reg = false;
+					//if (gapLen > (outerDim / 6)) reg = true;
+					if (gapLen > 2) reg = true; 
+
+					if (reg) addResult(side,gapPos,gapLen);
+
+					gapPos = -1;
+					gapLen = -1;
+				
+				} // if gap close
+
+			} // if diff
+
+			else {
+				
+				if (gapPos == -1) {
 					gapPos = outer;
 					gapLen = 0;
-				} // if open a gap
+				} // if gap open
 
 				gapLen++; // gap inc
 
@@ -191,8 +193,24 @@ class ShrinkShot {
 	} // procSide()
 
 
-	private:
-	void printResult(side_t side,int gapPos,int gapLen) {
+	private: int gray(int y,int x) {
+
+		unsigned int offset = bytesPerPix * ( (y * width) + x );
+		unsigned int value = buffer[offset];
+		value += buffer[1 + offset];
+		value += buffer[2 + offset];
+		if (bytesPerPix == 4) {
+			value += buffer[3 + offset];
+		} else {
+			value += buffer[1 + offset];
+		}
+		value = value >> 2;
+
+		return value;
+	} // gray()
+
+
+	private: void addResult(side_t side,int gapPos,int gapLen) {
 
 		gapPos += 1;
 		gapLen -= 1;
@@ -204,10 +222,13 @@ class ShrinkShot {
 			fprintf(stderr,"gap side=%c pos=%d len=%d \n",side,gapPos,gapLen);
 		# endif
 
+		char buffer[200];
+
 		if (side == 'h') {
 
-			printf(
-				" -chop %dx0+%d+0 "
+			sprintf(
+				buffer
+				," -chop %dx0+%d+0"
 				,gapLen
 				,gapPos
 			);
@@ -216,15 +237,46 @@ class ShrinkShot {
 
 		else { // side == 'v'
 
-			printf(
-				" -chop 0x%d+0+%d "
+			sprintf(
+				buffer
+				," -chop 0x%d+0+%d"
 				,gapLen
 				,gapPos
 			);
 
 		} // if v
 
-	} // printResult()
+		result.append(buffer);
+
+	} // addResult()
+
+
+	private: void prepare() {
+
+		// TODO: check imagemagick installation (or die)
+		imagemagick = "convert";
+
+	} // prepare()
+
+
+	private: void convert(const char* src, const char* dst) {
+
+		std::string command;
+		command.append(imagemagick);
+		command.append(result);
+		command.append(" ");
+		command.append(src);
+		command.append(" ");
+		command.append(dst);
+
+		# if DEBUG > 0
+			fprintf(stderr,"cmd: [%s]\n",command.c_str());
+		# endif
+
+		// TODO: change system() to something better
+		system(command.c_str());  
+ 
+	} // convert()
 
 
 }; // class ShrinkShot
