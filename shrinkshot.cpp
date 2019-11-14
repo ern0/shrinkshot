@@ -32,7 +32,7 @@ class ShrinkShot {
 	private: void about() {
 		fprintf(
 			stderr,
-			"shrinkshot (2019.11.14) - shrink images by removing empty regions \n"
+			"shrinkshot (2019.11.14 09:47) - shrink images by removing empty regions \n"
 			"  (best use case: screenshot) \n"
 			"  see https://github.com/ern0/shrinkshot \n"
 		);
@@ -279,11 +279,13 @@ class ShrinkShot {
 
 		std::string command;
 		command.append(imagemagick);
+		command.append(" ");
 		command.append(result);
-		command.append(" ");
+		command.append(" \"");
 		command.append(src);
-		command.append(" ");
+		command.append("\" \"");
 		command.append(dst);
+		command.append("\"");
 
 		# if DEBUG > 0
 			fprintf(stderr,"cmd: [%s]\n",command.c_str());
