@@ -62,7 +62,7 @@ The most known use case of it is the status bar, which should be
 cut separately:
 
 This image has no columns to cut (only lines):
-`
+````
   ---------------------------
  | content           content |
  | on left           on the  |
@@ -71,10 +71,10 @@ This image has no columns to cut (only lines):
  |                           |
  |          status           |
   ---------------------------
-`
+````
 
 But it should be:
-`
+````
   ----------------------
  | content     content |
  | on left     on the  |
@@ -83,13 +83,13 @@ But it should be:
  |                     |
  |       status        |
   ---------------------
-`
+````
 
 The "status" line occupies small vertical size,
 so it's a good candidate to handle differently from the main area.
 
 Empty areas marked with numbers (vertical only):
-`
+````
   ---------------------------   --
  | content 111111    content |  |
  | on left 111111    on the  |  | large area
@@ -98,7 +98,7 @@ Empty areas marked with numbers (vertical only):
  |         111111            |  --
  | 22222222 status 222222222 |  | small area
   ---------------------------   --
-`
+````
 
 The program should detect main area (primary target for shrinking),
 and try to shrink same amout from smaller areas.
