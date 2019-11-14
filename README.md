@@ -6,16 +6,16 @@ A simple CLI tool to detect and cut out empty areas of an image (screenshot) in 
 
 The program simply scans for whole pixel columns and lines which are identical to their neigbours. These columns and lines can be cut out from the image, no information will be loss, but the image will be smaller and more compact.
 
-This is not an out-of-box application: the program itself only a CLI tool, which tries to detect empty areas in a specified PNG image, then prints out a bunch of CLI arguments to be passed to ImageMagick's `convert` utility, which is doing the actual job.
+The program itself only a CLI tool, which tries to detect empty areas in a specified PNG image, then calls - with a bunch of parameters - ImageMagick's `convert` utility, which is doing the actual job.
 
-You may assign a hotkey to yout script, which makes a screenshot from a window, passing through it on shrinkshot+convert, and saves it. Currently, I don't provide this kinda script, as I'm a newbie Mac user and I don't know how to do it.
+You may assign a hotkey to yout script, which makes a screenshot of a window, passing through it on shrinkshot, and saves it.
 
 ## Installation
 
 To make it work, first, you should install ImageMagick:
 
 - MacOS: `brew install imagemagick`
-- Debian/Ubuntu Linux: `sudo apt-get install imagemagick` 
+- Debian/Ubuntu Linux: `sudo apt-get install imagemagick`
 - etc.
 
 Also, don't forget to checkout the `upng` GIT submodule:
@@ -23,61 +23,116 @@ Also, don't forget to checkout the `upng` GIT submodule:
 
 ## Usage
 
-By calling `shrinkshot` with a PNG filename specified, it dumps out a bunch of parameters for `convert` (ImageMagick's CLI app):
 ```
-$ shrinkshot image.png
--chop 4x0+2+0 -chop 4x0+11+0 -chop 2x0+19+0 -chop 12x0+26+0 -chop 0x5+0+2 -chop 0x2+0+6 -chop 0x6+0+11
+$ shrinkshot screenshot.png result.png
 ```
 
-```
-convert image.png `shrinkshot image.png` result.png
-```
+To make it work, first, you should install ImageMagick:
+
+- MacOS: `brew install imagemagick`
+- Debian/Ubuntu Linux: `sudo apt install imagemagick`
+- Windows: `choco install imagemagick`
 
 Then you may pass the parameters to `convert` utility>
 
 If any problem occurs, `shrinkshot` prints error messages to `stderr`.
 
+## Build
+
+### For Unix systems
+
+Just start `compile.sh`. Requires GCC to be installed.
+
+### For Windows
+
+You can build Windows executable on both Windows and Unix systems
+(not tested on Linux). All you have to do is install MinGW and
+launch `compile-for-windows.sh` on Unix systems or `compile-on-windows.bat`
+on Windows.
+
+Also, you may use the executable provided in `bin/` directory.
+
 ## TODO
 
 ### Needs more test
 
-- Only tested on sample images you can found in the `test/` directory. 
+- Only tested on sample images you can found in the `test/` directory
+(converted images are also included).
 - Not tested on Linux distros yet.
 
 ### Known issues to be fixed
 
-Rightmost and bottom areas will be not removed due to a missing check at the end of the processing. This will be fixed soon.
+- If you make a screenshot by marking the cut region by hand (sometimes called snipping tool), empty area detection may fail on the background image. A simple solution is just simply ignore 3-4 pixels on the borders, this hack will be applied soon.
+- Noisy regions are not detected.
 
-If you make a screenshot by marking the area by hand (sometimes called snipping tool), empty area detection may fail on background image. A simple solution is by just simply ignore 3-4 pixels on the borders, this hack will be applied soon.
+### Algorithm enhancements
+
+It would be great to split the image to more regions
+(e.g. horizontal stripes), and cut out (same width) areas from it
+at different (horizontal) positions.
+
+The most known use case of it is the status bar, which should be
+cut separately:
+
+This image has no columns to cut (only lines):
+````
+  ---------------------------
+ | content           content |
+ | on left           on the  |
+ |                right side |
+ |                           |
+ |                           |
+ |          status           |
+  ---------------------------
+````
+
+But it should be:
+````
+  ----------------------
+ | content     content |
+ | on left     on the  |
+ |          right side |
+ |                     |
+ |                     |
+ |       status        |
+  ---------------------
+````
+
+The "status" line occupies small vertical size,
+so it's a good candidate to handle differently from the main area.
+
+Empty areas marked with numbers (vertical only):
+````
+  ---------------------------   --
+ | content 111111    content |  |
+ | on left 111111    on the  |  | large area
+ |         111111 right side |  |
+ |         111111            |  |
+ |         111111            |  --
+ | 22222222 status 222222222 |  | small area
+  ---------------------------   --
+````
+
+The program should detect main area (primary target for shrinking),
+and try to shrink same amout from smaller areas.
 
 ### Enhance distribution
 
-ShrinkShot is now a CLI tool for doing a half job. It should be turned to an easy-to-install solution for making shrinked screenshots with a hotkey.
+ShrinkShot is now a CLI tool for. It should be turned to an easy-to-install solution for making shrinked screenshots with a hotkey.
 
 I don't want to turn it to a boxed software with printed manual, but the distribution should be more user-friendly:
 - Linux: provide a shell script, which can be assigned to a hotkey. Probably release it as a `.deb` package.
 - MacOS: have no idea.
-
-### Conceptional issues
-
-The program now detects empty areas by checking whole pixel rows and columns. It works well, but there are some cases, when empty regions does not occupy the whole height/width of the image.
-
-There's an example, which the current method couldn't handle:
-```
- -------------          ---------- 
-| 111111      |    =>  | 111111   | 
-|     2222222 |        |  2222222 |
- -------------          ----------
-```
+- Windows: have no idea.
 
 ## Credits
 
-The idea and some sample images come from a question issued by *Thomas* on the Software Recommendation (StackExchange) site.
+The idea and some sample images come from a question issued by *@Thomas* on the Software Recommendation (StackExchange) site.
 
-The actual conversation is done by **ImageMagick*.
+The actual conversation is done by **ImageMagick**.
 
 ShrinkShot is using **UPNG** library to load and parse PNG files. It's included in the repository as a GIT submodule.
 
 ## Copyright
 
-Use it as you want. I'll be happy if you mention it in the credits.
+Use it as you want. I'll be happy if you integrate it and mention it in the credits.
