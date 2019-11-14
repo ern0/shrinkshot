@@ -1,6 +1,6 @@
 # ShrinkShot
 
-A simple CLI tool to detect and cut out empty areas of an image (screenshot) in order to make it smaller without resizing its content. 
+A simple CLI tool to detect and cut out empty areas of an image (screenshot) in order to make it smaller without resizing its content.
 
 ## Features
 
@@ -19,23 +19,89 @@ $ shrinkshot screenshot.png result.png
 To make it work, first, you should install ImageMagick:
 
 - MacOS: `brew install imagemagick`
-- Debian/Ubuntu Linux: `sudo apt-get install imagemagick` 
-- Windows: download, install (not sure)
-- etc.
+- Debian/Ubuntu Linux: `sudo apt install imagemagick`
+- Windows: `choco install imagemagick`
 
 If any problem occurs, `shrinkshot` prints error messages to `stderr`.
+
+## Build
+
+### For Unix systems
+
+Just start `compile.sh`. Requires GCC to be installed.
+
+### For Windows
+
+You can build Windows executable on both Windows and Unix systems
+(not tested on Linux). All you have to do is install MinGW and
+launch `compile-for-windows.sh` on Unix systems or `compile-on-windows.bat`
+on Windows.
+
+Also, you may use the executable provided in `bin/` directory.
 
 ## TODO
 
 ### Needs more test
 
-- Only tested on sample images you can found in the `test/` directory. 
+- Only tested on sample images you can found in the `test/` directory
+(converted images are also included).
 - Not tested on Linux distros yet.
-- Test on Windows.
 
 ### Known issues to be fixed
 
-If you make a screenshot by marking the area by hand (sometimes called snipping tool), empty area detection may fail on background image. A simple solution is just simply ignore 3-4 pixels on the borders, this hack will be applied soon.
+- If you make a screenshot by marking the cut region by hand (sometimes called snipping tool), empty area detection may fail on the background image. A simple solution is just simply ignore 3-4 pixels on the borders, this hack will be applied soon.
+- Noisy regions are not detected.
+
+### Algorithm enhancements
+
+It would be great to split the image to more regions
+(e.g. horizontal stripes), and cut out (same width) areas from it
+at different (horizontal) positions.
+
+The most known use case of it is the status bar, which should be
+cut separately:
+
+This image has no columns to cut (only lines):
+`
+  ---------------------------
+ | content           content |
+ | on left           on the  |
+ |                right side |
+ |                           |
+ |                           |
+ |          status           |
+  ---------------------------
+`
+
+But it should be:
+`
+  ----------------------
+ | content     content |
+ | on left     on the  |
+ |          right side |
+ |                     |
+ |                     |
+ |       status        |
+  ---------------------
+`
+
+The "status" line occupies small vertical size,
+so it's a good candidate to handle differently from the main area.
+
+Empty areas marked with numbers (vertical only):
+`
+  ---------------------------   --
+ | content 111111    content |  |
+ | on left 111111    on the  |  | large area
+ |         111111 right side |  |
+ |         111111            |  |
+ |         111111            |  --
+ | 22222222 status 222222222 |  | small area
+  ---------------------------   --
+`
+
+The program should detect main area (primary target for shrinking),
+and try to shrink same amout from smaller areas.
 
 ### Enhance distribution
 
@@ -44,22 +110,11 @@ ShrinkShot is now a CLI tool for. It should be turned to an easy-to-install solu
 I don't want to turn it to a boxed software with printed manual, but the distribution should be more user-friendly:
 - Linux: provide a shell script, which can be assigned to a hotkey. Probably release it as a `.deb` package.
 - MacOS: have no idea.
-
-### Conceptional issues
-
-The program now detects empty areas by checking whole pixel rows and columns. It works well, but there are some cases, when empty regions does not occupy the whole height/width of the image.
-
-There's an example, which the current method couldn't handle:
-```
- -------------          ---------- 
-| 111111      |    =>  | 111111   | 
-|     2222222 |        |  2222222 |
- -------------          ----------
-```
+- Windows: have no idea.
 
 ## Credits
 
-The idea and some sample images come from a question issued by *Thomas* on the Software Recommendation (StackExchange) site.
+The idea and some sample images come from a question issued by *@Thomas* on the Software Recommendation (StackExchange) site.
 
 The actual conversation is done by **ImageMagick**.
 

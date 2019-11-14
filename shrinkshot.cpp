@@ -1,3 +1,7 @@
+# ifdef WINDOWS
+# define _WIN32_WINNT 0x0502
+# include <windows.h>
+# endif
 # include <stdio.h>
 # include <stdlib.h>
 # include <unistd.h>
@@ -11,7 +15,7 @@ class ShrinkShot {
 	typedef char side_t;
 
 	private:
-	
+
 		const char* sfnam;
 		upng_t* upng;
 		std::string imagemagick;
@@ -28,7 +32,7 @@ class ShrinkShot {
 	private: void about() {
 		fprintf(
 			stderr,
-			"shrinkshot - shrink images by removing empty regions \n" 
+			"shrinkshot (2019.11.14) - shrink images by removing empty regions \n"
 			"  (best use case: screenshot) \n"
 			"  see https://github.com/ern0/shrinkshot \n"
 		);
@@ -42,9 +46,15 @@ class ShrinkShot {
 
 	public:	int main(int argc,char* argv[]) {
 
+		# ifdef WINDOWS
+			AttachConsole(ATTACH_PARENT_PROCESS);
+			freopen("CONOUT$","w",stdout);
+			freopen("CONOUT$","w",stderr);
+		# endif
+
 		if (argc < 3) {
 			about();
-			fprintf(stderr,"specify source and target filenames \n");
+			fprintf(stderr,"usage:\n  shrinkshot screenshot.png result.png \n");
 			exit(0);
 		}
 
@@ -52,7 +62,7 @@ class ShrinkShot {
 		load(argv[1]);
 		proc();
 		convert(argv[1],argv[2]);
-	
+
 		return 0;
 	} // main()
 
@@ -60,7 +70,7 @@ class ShrinkShot {
 	private: void load(char* fnam) {
 
 		upng = upng_new_from_file(fnam);
-	
+
 		if (upng != NULL) {
 			upng_decode(upng);
 			if (upng_get_error(upng) == UPNG_EOK) {
@@ -80,16 +90,16 @@ class ShrinkShot {
 				}
 
 				bytesPerPix = bpp >> 3;
-			
+
 			} // if okay
 
 			else {
+				upng_free(upng);
+
 				sig();
 				fprintf(stderr,"error processing file %s \n",fnam);
 				exit(1);
 			}
-
-			upng_free(upng);
 
 		} // if upng from file
 
@@ -111,6 +121,8 @@ class ShrinkShot {
 		procSide('h',width,height);
 		procSide('v',height,width);
 
+		upng_free(upng);
+
 	} // proc()
 
 
@@ -120,7 +132,7 @@ class ShrinkShot {
 		int* diffValue = (int*)malloc(outerDim * sizeof(int));
 
 		for (int outer = 1; outer < outerDim; outer++) {
-			
+
 			diffCount[outer] = 0;
 			diffValue[outer] = 0;
 
@@ -134,7 +146,7 @@ class ShrinkShot {
 					neighbour = gray(inner,outer - 1);
 				} else {
 					actual = gray(outer,inner);
-					neighbour = gray(outer - 1,inner);					
+					neighbour = gray(outer - 1,inner);
 				}
 
 				int diff = actual - neighbour;
@@ -158,24 +170,23 @@ class ShrinkShot {
 			if (diffCount[outer] > 0) {
 
 				if (gapPos == -1) continue; // no gap
-				
+
 				if (gapLen > 0) {
 
 					bool reg = false;
-					//if (gapLen > (outerDim / 6)) reg = true;
-					if (gapLen > 2) reg = true; 
+					if (gapLen > 2) reg = true;
 
 					if (reg) addResult(side,gapPos,gapLen);
 
 					gapPos = -1;
 					gapLen = -1;
-				
+
 				} // if gap close
 
 			} // if diff
 
 			else {
-				
+
 				if (gapPos == -1) {
 					gapPos = outer;
 					gapLen = 0;
@@ -214,7 +225,7 @@ class ShrinkShot {
 
 		gapPos += 1;
 		gapLen -= 1;
- 
+
 		gapPos -= gapCorrection;
 		gapCorrection += gapLen;
 
@@ -233,7 +244,7 @@ class ShrinkShot {
 				,gapPos
 			);
 
-		} // if h 
+		} // if h
 
 		else { // side == 'v'
 
@@ -254,7 +265,12 @@ class ShrinkShot {
 	private: void prepare() {
 
 		// TODO: check imagemagick installation (or die)
-		imagemagick = "convert";
+
+		# ifdef WINDOWS
+			imagemagick = "magick convert";
+		# else
+			imagemagick = "convert";
+		# endif
 
 	} // prepare()
 
@@ -274,8 +290,8 @@ class ShrinkShot {
 		# endif
 
 		// TODO: change system() to something better
-		system(command.c_str());  
- 
+		system(command.c_str());
+
 	} // convert()
 
 
