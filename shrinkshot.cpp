@@ -32,7 +32,7 @@ class ShrinkShot {
 	private: void about() {
 		fprintf(
 			stderr,
-			"shrinkshot (2019.11.14 09:47) - shrink images by removing empty regions \n"
+			"shrinkshot (2019.11.18 08:48) - shrink images by removing empty regions \n"
 			"  (best use case: screenshot) \n"
 			"  see https://github.com/ern0/shrinkshot \n"
 		);
@@ -94,10 +94,23 @@ class ShrinkShot {
 			} // if okay
 
 			else {
+
 				upng_free(upng);
 
+				int errorCode = upng_get_error(upng);
+				const char* message = "(unknown)";
+				switch (errorCode) {
+					case UPNG_ENOTFOUND: message = "resource not found (file missing)"; break;
+					case UPNG_ENOTPNG: message = "image data does not have a PNG header"; break;
+					case UPNG_EMALFORMED: message = "image data is not a valid PNG image"; break;
+					case UPNG_EUNSUPPORTED: message = "critical PNG chunk type is not supported"; break;
+					case UPNG_EUNINTERLACED: message = "image interlacing is not supported"; break;
+					case UPNG_EUNFORMAT: message = "image color format is not supported"; break;
+					case UPNG_EPARAM: message = "invalid parameter to method call"; break;
+				}
+
 				sig();
-				fprintf(stderr,"error processing file %s \n",fnam);
+				fprintf(stderr,"error processing file %s, upng error %d (%s) \n",fnam,errorCode,message);
 				exit(1);
 			}
 
