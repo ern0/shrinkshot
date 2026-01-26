@@ -6,20 +6,17 @@ A simple CLI tool to detect and cut out empty areas of an image (screenshot) in 
 
 The program simply scans for whole pixel columns and lines which are identical to their neigbours. These columns and lines can be cut out from the image, no information will be loss, but the image will be smaller and more compact.
 
-The program itself only a CLI tool, which tries to detect empty areas in a specified PNG image, then calls - with a bunch of parameters - ImageMagick's `convert` utility, which is doing the actual job.
+The program itself only a CLI tool, which tries to detect empty areas in a specified PNG image, then removes them and save the shrinked image.
+
+> The V1 program did not perform the conversion itself, but rather created the parameters for ImageMagick's `convert` utility, which was doing the actual job.
 
 You may assign a hotkey to yout script, which makes a screenshot of a window, passing through it on shrinkshot, and saves it.
 
 ## Installation
 
-To make it work, first, you should install ImageMagick:
+> The V1 program required to install ImageMagick and pull `upng` submodule.
 
-- MacOS: `brew install imagemagick`
-- Debian/Ubuntu Linux: `sudo apt-get install imagemagick`
-- etc.
-
-Also, don't forget to checkout the `upng` GIT submodule:
-`git submodule update --init --recursive`
+Just build the app with `cargo build`, or let `build.sh` to do it.
 
 ## Usage
 
@@ -27,38 +24,7 @@ Also, don't forget to checkout the `upng` GIT submodule:
 $ shrinkshot screenshot.png result.png
 ```
 
-To make it work, first, you should install ImageMagick:
-
-- MacOS: `brew install imagemagick`
-- Debian/Ubuntu Linux: `sudo apt install imagemagick`
-- Windows: `choco install imagemagick`
-
-Then you may pass the parameters to `convert` utility>
-
 If any problem occurs, `shrinkshot` prints error messages to `stderr`.
-
-## Build
-
-### For Unix systems
-
-Just start `compile.sh`. Requires GCC to be installed.
-
-### For Windows
-
-You can build Windows executable on both Windows and Unix systems
-(not tested on Linux). All you have to do is install MinGW and
-launch `compile-for-windows.sh` on Unix systems or `compile-on-windows.bat`
-on Windows.
-
-Also, you may use the executable provided in `bin/` directory.
-
-## TODO
-
-### Needs more test
-
-- Only tested on sample images you can found in the `test/` directory
-(converted images are also included).
-- Not tested on Linux distros yet.
 
 ### Known issues to be fixed
 
@@ -128,10 +94,6 @@ I don't want to turn it to a boxed software with printed manual, but the distrib
 ## Credits
 
 The idea and some sample images come from a question issued by *@Thomas* on the Software Recommendation (StackExchange) site.
-
-The actual conversation is done by **ImageMagick**.
-
-ShrinkShot is using **UPNG** library to load and parse PNG files. It's included in the repository as a GIT submodule.
 
 ## Copyright
 
