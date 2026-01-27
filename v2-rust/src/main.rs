@@ -7,7 +7,6 @@ use image::{ImageBuffer, Rgba};
 const REQUIRED_ARG_NUMBER: usize = 3;
 
 type SideSize = usize;
-const CHANNELS: SideSize = 3;
 const IGNORED_MARGIN_SIZE: SideSize = 2;
 const MINIMUM_SIDE_SIZE: SideSize = 10;
 const COMBINED_MARGIN: SideSize = (IGNORED_MARGIN_SIZE * 2) + MINIMUM_SIDE_SIZE;
@@ -54,10 +53,12 @@ fn main() {
         img.width() as SideSize,
         img.height() as SideSize,
     );
+
+    println!("Original dimensions: {original_width}x{origial_height}");
+
     let mut pixels = img.to_rgba8().to_vec();
     let (new_width, new_height) = shrink(&mut pixels, original_width, origial_height);
 
-    println!("Original dimensions: {original_width}x{origial_height}");
     println!("New dimensions: {new_width}x{new_height}");
 
     let new_img: ImageBuffer<Rgba<u8>, Vec<u8>> = ImageBuffer::from_raw(
@@ -78,28 +79,33 @@ fn shrink(
         original_height: SideSize
     ) -> (SideSize, SideSize) {
 
-    let (horizontal_keep_vec, new_widht,) = calc_keep(
+println!("---- horizontal ----");
+
+    let (horizontal_keep_vec, new_widht,) = calc_keep_bars(
         pixels,
-        original_width,     // outer length
-        1,                  // outer stepping
-        original_height,    // inner length
-        original_width,     // inner stepping
+        original_width,      // outer length
+        1,                   // outer stepping
+        original_height,     // inner length
+        original_width,      // inner stepping
     );
 
-    let (vertical_keep_vec, new_height,) = calc_keep(
-        pixels,
-        original_height,    // outer length
-        original_width,     // outer stepping
-        original_width,     // inner length
-        1,                  // inner stepping
-    );
+// println!("---- vertical ----");
+    let new_height = original_height;
+
+//     let (vertical_keep_vec, new_height,) = calc_keep_bars(
+//         pixels,
+//         original_height,     // outer length
+//         original_width,      // outer stepping
+//         original_width,      // inner length
+//         1,                   // inner stepping
+//     );
 
     // TODO: copy image
 
     (new_widht, new_height,)
 }
 
-fn calc_keep(
+fn calc_keep_bars(
         pixels: &mut [u8],
         outer_length: SideSize,
         outer_stepping: SideSize,
@@ -107,64 +113,87 @@ fn calc_keep(
         inner_stepping: SideSize,
     ) -> (Vec<Region>, SideSize) {
 
-    let mut result = Vec::new();
-    let mut new_size = outer_length;
+// println!("calc_keep_bars(): outer_length={outer_length} outer_stepping={outer_stepping} inner_length={inner_length} inner_stepping={inner_stepping}");
 
-    let outer_start_position = IGNORED_MARGIN_SIZE + 1;
-    let outer_stop_position =  outer_length - IGNORED_MARGIN_SIZE;
+    let mut keep_list = Vec::new();
+    let mut new_outer_length = outer_length;
 
-    let mut outer_index = outer_start_position * outer_stepping;
+    let outer_start_position = IGNORED_MARGIN_SIZE + 1;   // +1 to skip first item
+    let outer_stop_position = outer_length - IGNORED_MARGIN_SIZE;
+
+    let mut outer_index =
+        (
+            (outer_start_position * outer_stepping)
+            +
+            (IGNORED_MARGIN_SIZE * inner_stepping)
+        ) * 4;
+
     for _outer_position in outer_start_position..outer_stop_position {
 
-        if is_similar_to_prev(
+        if neighbour_bars_are_identical(
             pixels,
-            outer_index,
-            inner_length,
-            inner_stepping,
-            outer_length,      // inner offset
+            outer_index,     // starting index
+            inner_length,    // length
+            inner_stepping,  // step
+            outer_stepping,  // neighbour offset
         ) {
-
+            print!("=");
         } else {
-
+            print!("X");
         }
 
-        outer_index += outer_stepping * CHANNELS;
+        outer_index += outer_stepping * 4;
     }
 
-    (result, new_size,)
+    println!("");
+
+    (keep_list, new_outer_length,)
 }
 
-fn is_similar_to_prev(
-        pixels: &[u8],
+fn neighbour_bars_are_identical(
+        pixels: &mut [u8],
         starting_index: SideSize,
         length: SideSize,
         step: SideSize,
-        offset: SideSize,
+        neighbour_offset: SideSize,
     ) -> bool {
 
     let start_pos = IGNORED_MARGIN_SIZE;
     let end_pos = length - IGNORED_MARGIN_SIZE;
 
+// println!("neighbour_bars_are_identical(): starting_index={starting_index} length={length} step={step} neighbour_offset={neighbour_offset} start_pos={start_pos} end_pos={end_pos}");
+
     let mut index = starting_index;
+
     for _pos in start_pos..end_pos {
 
-        if is_different(pixels, index, index - offset) {
+        // println!("{}:{}:{}--{}:{}:{}",
+        //     pixels[index + 0],
+        //     pixels[index + 1],
+        //     pixels[index + 2],
+        //     pixels[index - neighbour_offset*4 + 0],
+        //     pixels[index - neighbour_offset*4 + 1],
+        //     pixels[index - neighbour_offset*4 + 2],
+        // );
+
+        if pixels_are_different(pixels, index, index - neighbour_offset*4) {
             return false;
         }
 
-        index += step * CHANNELS;
+        index += step * 4;
     }
 
     true
 }
 
-fn is_different(pixels: &[u8], a: SideSize, b: SideSize) -> bool {
+fn pixels_are_different(pixels: &[u8], a: SideSize, b: SideSize) -> bool {
 
-    for channel in 0..CHANNELS {
+    for channel in 0..3 {
+
         if pixels[a + channel] != pixels[b + channel] {
-            return false;
+            return true;
         }
     }
 
-    true
+    false
 }
