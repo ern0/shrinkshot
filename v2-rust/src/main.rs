@@ -9,7 +9,6 @@ const REQUIRED_ARG_NUMBER: usize = 3;
 type SideSize = usize;
 const IGNORED_MARGIN_SIZE: SideSize = 2;
 const MINIMUM_SIDE_SIZE: SideSize = 10;
-const COMBINED_MARGIN: SideSize = (IGNORED_MARGIN_SIZE * 2) + MINIMUM_SIDE_SIZE;
 
 #[derive(Clone, Copy)]
 struct Region {
@@ -19,10 +18,10 @@ struct Region {
 
 impl Region {
 
-    fn new(position: SideSize) -> Self {
+    fn new(position: SideSize, length: SideSize) -> Self {
         Self {
             position,
-            length: 1,
+            length,
         }
     }
 }
@@ -57,7 +56,7 @@ fn main() {
     println!("Original dimensions: {original_width}x{origial_height}");
 
     let mut pixels = img.to_rgba8().to_vec();
-    let (new_width, new_height) = shrink(&mut pixels, original_width, origial_height);
+    let (new_width, new_height,) = shrink(&mut pixels, original_width, origial_height);
 
     println!("New dimensions: {new_width}x{new_height}");
 
@@ -79,9 +78,13 @@ fn shrink(
         original_height: SideSize
     ) -> (SideSize, SideSize) {
 
+    if original_width < MINIMUM_SIDE_SIZE || original_height < MINIMUM_SIDE_SIZE {
+        return (original_width, original_height,);
+    }
+
 println!("---- horizontal ----");
 
-    let (horizontal_keep_vec, new_widht,) = calc_keep_bars(
+    let horizontal_keep_vec = calc_keep_bars(
         pixels,
         original_width,      // outer length
         1,                   // outer stepping
@@ -89,20 +92,34 @@ println!("---- horizontal ----");
         original_width,      // inner stepping
     );
 
-// println!("---- vertical ----");
-    let new_height = original_height;
+println!("---- vertical ----");
 
-//     let (vertical_keep_vec, new_height,) = calc_keep_bars(
-//         pixels,
-//         original_height,     // outer length
-//         original_width,      // outer stepping
-//         original_width,      // inner length
-//         1,                   // inner stepping
-//     );
+    let vertical_keep_vec = calc_keep_bars(
+        pixels,
+        original_height,     // outer length
+        original_width,      // outer stepping
+        original_width,      // inner length
+        1,                   // inner stepping
+    );
 
-    // TODO: copy image
+    let mut new_width = 0;
+    for region in horizontal_keep_vec {
+        new_width += region.length;
+        println!("H: pos={} len={}", region.position, region.length);
+    }
+    let mut new_height = 0;
+    for region in vertical_keep_vec {
+        new_height += region.length;
+        println!("V: pos={} len={}", region.position, region.length);
+    }
 
-    (new_widht, new_height,)
+    // for horizontal_region in horizontal_keep_vec {
+
+
+    // }
+
+
+    (new_width, new_height,)
 }
 
 fn calc_keep_bars(
@@ -111,24 +128,24 @@ fn calc_keep_bars(
         outer_stepping: SideSize,
         inner_length: SideSize,
         inner_stepping: SideSize,
-    ) -> (Vec<Region>, SideSize) {
+    ) -> Vec<Region> {
 
 // println!("calc_keep_bars(): outer_length={outer_length} outer_stepping={outer_stepping} inner_length={inner_length} inner_stepping={inner_stepping}");
 
     let mut keep_list = Vec::new();
-    let mut new_outer_length = outer_length;
+    keep_list.push(Region::new(0, IGNORED_MARGIN_SIZE));
 
     let outer_start_position = IGNORED_MARGIN_SIZE + 1;   // +1 to skip first item
     let outer_stop_position = outer_length - IGNORED_MARGIN_SIZE;
 
     let mut outer_index =
-        (
-            (outer_start_position * outer_stepping)
-            +
-            (IGNORED_MARGIN_SIZE * inner_stepping)
-        ) * 4;
+        (outer_start_position * outer_stepping * 4) +
+        (IGNORED_MARGIN_SIZE * inner_stepping * 4);
 
-    for _outer_position in outer_start_position..outer_stop_position {
+    let mut region = Region::new(outer_start_position - 1, 1);
+    let mut same_stroke = false;
+
+    for outer_position in outer_start_position..outer_stop_position {
 
         if neighbour_bars_are_identical(
             pixels,
@@ -137,17 +154,29 @@ fn calc_keep_bars(
             inner_stepping,  // step
             outer_stepping,  // neighbour offset
         ) {
-            print!("=");
+            if !same_stroke {
+
+                same_stroke = true;
+                keep_list.push(region.clone());
+
+                region.position = outer_position;
+                region.length = 0;
+            }
         } else {
-            print!("X");
+            same_stroke = false;
+            region.length += 1;
         }
 
         outer_index += outer_stepping * 4;
     }
 
-    println!("");
+    if region.length > 0 {
+        keep_list.push(region);
+    }
 
-    (keep_list, new_outer_length,)
+    keep_list.push(Region::new(outer_length - IGNORED_MARGIN_SIZE, IGNORED_MARGIN_SIZE));
+
+    keep_list
 }
 
 fn neighbour_bars_are_identical(
@@ -166,15 +195,6 @@ fn neighbour_bars_are_identical(
     let mut index = starting_index;
 
     for _pos in start_pos..end_pos {
-
-        // println!("{}:{}:{}--{}:{}:{}",
-        //     pixels[index + 0],
-        //     pixels[index + 1],
-        //     pixels[index + 2],
-        //     pixels[index - neighbour_offset*4 + 0],
-        //     pixels[index - neighbour_offset*4 + 1],
-        //     pixels[index - neighbour_offset*4 + 2],
-        // );
 
         if pixels_are_different(pixels, index, index - neighbour_offset*4) {
             return false;
