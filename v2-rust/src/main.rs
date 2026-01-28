@@ -26,6 +26,14 @@ impl Region {
     }
 }
 
+struct BarsDefinition<'bd> {
+    pixels: &'bd [u8],
+    outer_length: SideSize,
+    outer_stepping: SideSize,
+    inner_length: SideSize,
+    inner_stepping: SideSize,
+}
+
 fn main() {
 
     let args: Vec<String> = env::args().collect();
@@ -82,65 +90,85 @@ fn shrink(
         return (original_width, original_height,);
     }
 
-println!("---- horizontal ----");
+// println!("---- horizontal ----");
 
     let horizontal_keep_vec = calc_keep_bars(
-        pixels,
-        original_width,      // outer length
-        1,                   // outer stepping
-        original_height,     // inner length
-        original_width,      // inner stepping
+        BarsDefinition {
+            pixels,
+            outer_length: original_width,
+            outer_stepping: 1,
+            inner_length: original_height,
+            inner_stepping: original_width,
+        }
     );
 
-println!("---- vertical ----");
+// println!("---- vertical ----");
 
     let vertical_keep_vec = calc_keep_bars(
-        pixels,
-        original_height,     // outer length
-        original_width,      // outer stepping
-        original_width,      // inner length
-        1,                   // inner stepping
+        BarsDefinition {
+            pixels,
+            outer_length: original_height,
+            outer_stepping: original_width,
+            inner_length: original_width,
+            inner_stepping: 1,
+        }
     );
 
-    let mut new_width = 0;
-    for region in horizontal_keep_vec {
-        new_width += region.length;
-        println!("H: pos={} len={}", region.position, region.length);
-    }
     let mut new_height = 0;
-    for region in vertical_keep_vec {
-        new_height += region.length;
-        println!("V: pos={} len={}", region.position, region.length);
+    let mut destination_index = 0;
+
+    for vertical_region in &vertical_keep_vec {
+        let mut source_line_index = vertical_region.position * 4;
+        new_height += vertical_region.length;
+
+        // println!("---- pos={} ----", vertical_region.position);
+
+        for _lines in 0..vertical_region.length {
+            // println!("  index={source_line_index}");
+
+            for horizontal_region in &horizontal_keep_vec {
+                let mut source_column_index = source_line_index + (horizontal_region.position * 4);
+
+                for _columns in 0..horizontal_region.length {
+                    for channel in 0..3 {
+                        pixels[destination_index + channel] =
+                            pixels[source_column_index + channel];
+                    }
+                    source_column_index += 4;
+                    destination_index += 4;
+                }
+
+            }
+
+            source_line_index += original_width * 4;
+        }
+
     }
 
-    // for horizontal_region in horizontal_keep_vec {
-
-
-    // }
+    let mut new_width = 0;
+    for horizontal_region in &horizontal_keep_vec {
+        new_width += horizontal_region.length;
+    }
 
 
     (new_width, new_height,)
 }
 
-fn calc_keep_bars(
-        pixels: &mut [u8],
-        outer_length: SideSize,
-        outer_stepping: SideSize,
-        inner_length: SideSize,
-        inner_stepping: SideSize,
-    ) -> Vec<Region> {
+fn calc_keep_bars(bars_def: BarsDefinition) -> Vec<Region> {
 
 // println!("calc_keep_bars(): outer_length={outer_length} outer_stepping={outer_stepping} inner_length={inner_length} inner_stepping={inner_stepping}");
 
     let mut keep_list = Vec::new();
-    keep_list.push(Region::new(0, IGNORED_MARGIN_SIZE));
+
+    if IGNORED_MARGIN_SIZE > 0 {
+        keep_list.push(Region::new(0, IGNORED_MARGIN_SIZE));
+    }
 
     let outer_start_position = IGNORED_MARGIN_SIZE + 1;   // +1 to skip first item
-    let outer_stop_position = outer_length - IGNORED_MARGIN_SIZE;
-
+    let outer_stop_position = bars_def.outer_length - IGNORED_MARGIN_SIZE;
     let mut outer_index =
-        (outer_start_position * outer_stepping * 4) +
-        (IGNORED_MARGIN_SIZE * inner_stepping * 4);
+        (outer_start_position * bars_def.outer_stepping * 4) +
+        (IGNORED_MARGIN_SIZE * bars_def.inner_stepping * 4);
 
     let mut region = Region::new(outer_start_position - 1, 1);
     let mut same_stroke = false;
@@ -148,11 +176,11 @@ fn calc_keep_bars(
     for outer_position in outer_start_position..outer_stop_position {
 
         if neighbour_bars_are_identical(
-            pixels,
-            outer_index,     // starting index
-            inner_length,    // length
-            inner_stepping,  // step
-            outer_stepping,  // neighbour offset
+            bars_def.pixels,
+            outer_index,                // starting index
+            bars_def.inner_length,      // length
+            bars_def.inner_stepping,    // step
+            bars_def.outer_stepping,    // neighbour offset
         ) {
             if !same_stroke {
 
@@ -167,20 +195,22 @@ fn calc_keep_bars(
             region.length += 1;
         }
 
-        outer_index += outer_stepping * 4;
+        outer_index += bars_def.outer_stepping * 4;
     }
 
     if region.length > 0 {
         keep_list.push(region);
     }
 
-    keep_list.push(Region::new(outer_length - IGNORED_MARGIN_SIZE, IGNORED_MARGIN_SIZE));
+    if IGNORED_MARGIN_SIZE > 0 {
+        keep_list.push(Region::new(bars_def.outer_length - IGNORED_MARGIN_SIZE, IGNORED_MARGIN_SIZE));
+    }
 
     keep_list
 }
 
 fn neighbour_bars_are_identical(
-        pixels: &mut [u8],
+        pixels: &[u8],
         starting_index: SideSize,
         length: SideSize,
         step: SideSize,
@@ -196,7 +226,7 @@ fn neighbour_bars_are_identical(
 
     for _pos in start_pos..end_pos {
 
-        if pixels_are_different(pixels, index, index - neighbour_offset*4) {
+        if !pixels_are_identical(pixels, index, index - neighbour_offset*4) {
             return false;
         }
 
@@ -206,14 +236,14 @@ fn neighbour_bars_are_identical(
     true
 }
 
-fn pixels_are_different(pixels: &[u8], a: SideSize, b: SideSize) -> bool {
+fn pixels_are_identical(pixels: &[u8], index1: SideSize, index2: SideSize) -> bool {
 
     for channel in 0..3 {
 
-        if pixels[a + channel] != pixels[b + channel] {
-            return true;
+        if pixels[index1 + channel] != pixels[index2 + channel] {
+            return false;
         }
     }
 
-    false
+    true
 }
