@@ -1,22 +1,42 @@
 # ShrinkShot
 
-A simple CLI tool to detect and cut out empty areas of an image (screenshot) in order to make it smaller without resizing its content.
+A simple CLI tool to detect and cut out
+empty areas of a PNG image
+(typically: a screenshot)
+in order to make it smaller
+without resizing its content.
 
 ## Features
 
-The program simply scans for whole pixel columns and lines which are identical to their neigbours. These columns and lines can be cut out from the image, no information will be loss, but the image will be smaller and more compact.
+The program simply scans for whole pixel columns and lines
+which are identical to their neigbours.
+These columns and lines can be cut out from the image,
+no information will be lost,
+but the image will be smaller and more compact.
 
-The program itself only a CLI tool, which tries to detect empty areas in a specified PNG image, then removes them and save the shrinked image.
+If you make a screenshot by marking the cut region by hand
+(sometimes called snipping tool),
+empty area detection may fail on the surrounding background.
+Shrinkshot uses a simple solution:
+just simply ignores 2-2 pixels at the borders
+(see `IGNORED_MARGIN_SIZE`).
 
-> The V1 program did not perform the conversion itself, but rather created the parameters for ImageMagick's `convert` utility, which was doing the actual job.
+> The V1 program did not perform the conversion itself,
+but rather created the argument list for
+ImageMagick's `convert` utility,
+which was doing the actual job.
 
-You may assign a hotkey to yout script, which makes a screenshot of a window, passing through it on shrinkshot, and saves it.
+You may assign a hotkey to yout script,
+which makes a screenshot of a window,
+passing through it on shrinkshot,
+and saves it.
 
 ## Installation
 
 > The V1 program required to install ImageMagick and pull `upng` submodule.
 
-Just build the app with `cargo build`, or let `build.sh` to do it.
+Just build the app with `cargo build`,
+or let `build.sh` to do it.
 
 ## Usage
 
@@ -26,15 +46,30 @@ $ shrinkshot screenshot.png result.png
 
 If any problem occurs, `shrinkshot` prints error messages to `stderr`.
 
-### Known issues to be fixed
+### Known issues
 
-- If you make a screenshot by marking the cut region by hand (sometimes called snipping tool), empty area detection may fail on the background image. A simple solution is just simply ignore 3-4 pixels on the borders, this hack will be applied soon.
-- Noisy regions are not detected.
+#### Detection failure
+
+Checking for identical neighbour lines and columns fails on
+- noisy areas
+- gradients.
+
+It requires more sophisticated method
+than simply comparing neighbour pixels.
+
+#### Elimination of padding
+
+Text are padded with empty pixel lines.
+The progra, may reduces these padding lines to 1 pixel height,
+which makes the text ugly, too dense.
+
+Maybe smaller areas should not be shrinked.
 
 ### Algorithm enhancements
 
 It would be great to split the image to more regions
-(e.g. horizontal stripes), and cut out (same width) areas from it
+(e.g. horizontal stripes),
+and cut out (same width) areas from it
 at different (horizontal) positions.
 
 The most known use case of it is the status bar, which should be
@@ -79,22 +114,17 @@ Empty areas marked with numbers (vertical only):
   ---------------------------   --
 ````
 
-The program should detect main area (primary target for shrinking),
-and try to shrink same amout from smaller areas.
-
-### Enhance distribution
-
-ShrinkShot is now a CLI tool for. It should be turned to an easy-to-install solution for making shrinked screenshots with a hotkey.
-
-I don't want to turn it to a boxed software with printed manual, but the distribution should be more user-friendly:
-- Linux: provide a shell script, which can be assigned to a hotkey. Probably release it as a `.deb` package.
-- MacOS: have no idea.
-- Windows: have no idea.
+The program should detect main area
+(primary target for shrinking),
+and try to shrink same amount at smaller areas.
 
 ## Credits
 
-The idea and some sample images come from a question issued by *@Thomas* on the Software Recommendation (StackExchange) site.
+The idea and some sample images come from a question
+issued by *@Thomas* on the
+Software Recommendation (StackExchange) site.
 
 ## Copyright
 
-Use it as you want. I'll be happy if you integrate it and mention it in the credits.
+Use it as you want.
+I'll be happy if you integrate it and mention it in the credits.
