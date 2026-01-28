@@ -114,23 +114,25 @@ fn shrink(
         }
     );
 
-    let mut new_height = 0;
+    let new_width = horizontal_keep_vec.iter().map(|region| region.length).sum();
+    let new_height = vertical_keep_vec.iter().map(|region| region.length).sum();
+
+    if new_width == original_width && new_height == original_height {
+        return (original_width, original_height,);
+    }
+
     let mut destination_index = 0;
 
     for vertical_region in &vertical_keep_vec {
-        let mut source_line_index = vertical_region.position * 4;
-        new_height += vertical_region.length;
+        for line_offset in 0..=vertical_region.length {
 
-        // println!("---- pos={} ----", vertical_region.position);
-
-        for _lines in 0..vertical_region.length {
-            // println!("  index={source_line_index}");
+            let source_line_index = (vertical_region.position + line_offset) * original_width * 4;
 
             for horizontal_region in &horizontal_keep_vec {
                 let mut source_column_index = source_line_index + (horizontal_region.position * 4);
 
-                for _columns in 0..horizontal_region.length {
-                    for channel in 0..3 {
+                for _columns in 0..=horizontal_region.length {
+                    for channel in 0..4 {
                         pixels[destination_index + channel] =
                             pixels[source_column_index + channel];
                     }
@@ -139,17 +141,9 @@ fn shrink(
                 }
 
             }
-
-            source_line_index += original_width * 4;
         }
 
     }
-
-    let mut new_width = 0;
-    for horizontal_region in &horizontal_keep_vec {
-        new_width += horizontal_region.length;
-    }
-
 
     (new_width, new_height,)
 }
