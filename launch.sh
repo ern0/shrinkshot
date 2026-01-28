@@ -3,8 +3,8 @@ clear
 
 BASE=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-$BASE/v2-rust/target/release/shrinkshot \
-    $BASE/test/a1-*.png \
-    $BASE/test/a3-result.png
+$BASE/target/debug/shrinkshot \
+    $BASE/test/f1-*.png \
+    $BASE/test/f3-result.png
 
-open $BASE/test/a3*.png
+open $BASE/test/f3*.png

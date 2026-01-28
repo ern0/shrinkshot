@@ -21,6 +21,12 @@ Shrinkshot uses a simple solution:
 just simply ignores 2-2 pixels at the borders
 (see `IGNORED_MARGIN_SIZE`).
 
+Texts are padded with empty pixel lines.
+Cutting these identical lines reduces the padding to 1 pixel height,
+which makes the text ugly and too dense.
+To avoid this, the program does not cut small areas
+(see `MINIMUM_SHRINK_SIZE`).
+
 > The V1 program did not perform the conversion itself,
 but rather created the argument list for
 ImageMagick's `convert` utility,
@@ -56,14 +62,6 @@ Checking for identical neighbour lines and columns fails on
 
 It requires more sophisticated method
 than simply comparing neighbour pixels.
-
-#### Elimination of padding
-
-Text are padded with empty pixel lines.
-The progra, may reduces these padding lines to 1 pixel height,
-which makes the text ugly, too dense.
-
-Maybe smaller areas should not be shrinked.
 
 ### Algorithm enhancements
 

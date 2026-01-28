@@ -7,8 +7,9 @@ use image::{ImageBuffer, Rgba};
 const REQUIRED_ARG_NUMBER: usize = 3;
 
 type SideSize = usize;
-const IGNORED_MARGIN_SIZE: SideSize = 2;
-const MINIMUM_SIDE_SIZE: SideSize = 10;
+const IGNORED_MARGIN_SIZE: SideSize = 10;
+const MINIMUM_SIDE_SIZE: SideSize = 30;
+const MINIMUM_SHRINK_SIZE: SideSize = 15;
 
 #[derive(Clone, Copy)]
 struct Region {
@@ -81,11 +82,12 @@ fn shrink(
     original_width: SideSize,
     original_height: SideSize
 ) -> (SideSize, SideSize) {
+
     if original_width < MINIMUM_SIDE_SIZE || original_height < MINIMUM_SIDE_SIZE {
         return (original_width, original_height);
     }
 
-    let horizontal_keep_vec = calc_keep_bars(
+    let mut horizontal_keep_vec = calc_keep_bars(
         BarsDefinition {
             pixels,
             outer_length: original_width,
@@ -95,7 +97,7 @@ fn shrink(
         }
     );
 
-    let vertical_keep_vec = calc_keep_bars(
+    let mut vertical_keep_vec = calc_keep_bars(
         BarsDefinition {
             pixels,
             outer_length: original_height,
@@ -105,16 +107,16 @@ fn shrink(
         }
     );
 
-    // Calculate new dimensions
-    let new_width: SideSize = horizontal_keep_vec.iter().map(|r| r.length).sum();
-    let new_height: SideSize = vertical_keep_vec.iter().map(|r| r.length).sum();
+    eliminate_gaps(&mut horizontal_keep_vec);
+    eliminate_gaps(&mut vertical_keep_vec);
+
+    let new_width: SideSize = horizontal_keep_vec.iter().map(|region| region.length).sum();
+    let new_height: SideSize = vertical_keep_vec.iter().map(|region| region.length).sum();
 
     if new_width == original_width && new_height == original_height {
-        return (original_width, original_height);
+        return (original_width, original_height,);
     }
 
-    // Create new pixel buffer
-    let mut new_pixels = vec![0u8; new_width * new_height * 4];
     let mut dest_idx = 0;
 
     for vertical_region in &vertical_keep_vec {
@@ -125,15 +127,16 @@ fn shrink(
                 for col_in_region in 0..horizontal_region.length {
                     let src_col_idx = src_line_idx + (horizontal_region.position + col_in_region) * 4;
 
-                    new_pixels[dest_idx..dest_idx + 4]
-                        .copy_from_slice(&pixels[src_col_idx..src_col_idx + 4]);
+                    for channel in 0..3 {
+                        pixels[dest_idx + channel] = pixels[src_col_idx + channel];
+                    }
+
                     dest_idx += 4;
                 }
             }
         }
     }
 
-    *pixels = new_pixels;
     (new_width, new_height)
 }
 
@@ -189,7 +192,7 @@ fn calc_keep_bars(bars_def: BarsDefinition) -> Vec<Region> {
         keep_list.push(Region::new(current_region_start, current_region_length));
     }
 
-    if IGNORED_MARGIN_SIZE > 0 && bars_def.outer_length > IGNORED_MARGIN_SIZE {
+    if (IGNORED_MARGIN_SIZE > 0) && (bars_def.outer_length > IGNORED_MARGIN_SIZE) {
         let margin_start = bars_def.outer_length - IGNORED_MARGIN_SIZE;
         keep_list.push(Region::new(margin_start, IGNORED_MARGIN_SIZE));
     }
@@ -221,10 +224,36 @@ fn neighbour_bars_are_identical(
         let index = starting_index + (inner_pos * step * 4);
         let prev_index = index - (neighbour_offset * 4);
 
-        if pixels.get(index..index + 3) != pixels.get(prev_index..prev_index + 3) {
+        if !pixels_are_similar(pixels, index, prev_index) {
             return false;
         }
     }
 
     true
+}
+
+fn pixels_are_similar(pixels: &[u8], index1: SideSize, index2: SideSize) -> bool {
+
+    pixels.get(index1..index1 + 3) == pixels.get(index2..index2 + 3)
+
+}
+
+fn eliminate_gaps(region_list: &mut Vec<Region>) {
+
+    for i in 0..region_list.len() - 1 {
+
+        let region_end = {
+            let region = region_list[i];
+            region.position + region.length
+        };
+        let next_begin = {
+            let next = region_list.get(i + 1).unwrap();
+            next.position
+        };
+
+        let gap = next_begin - region_end;
+        if (1..MINIMUM_SHRINK_SIZE).contains(&gap) {
+            region_list[i].length += gap;
+        }
+    }
 }
