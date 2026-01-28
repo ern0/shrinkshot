@@ -8,11 +8,15 @@ without resizing its content.
 
 ## Features
 
+### Basic
+
 The program simply scans for whole pixel columns and lines
 which are identical to their neigbours.
 These columns and lines can be cut out from the image,
 no information will be lost,
 but the image will be smaller and more compact.
+
+### Avoid background border
 
 If you make a screenshot by marking the cut region by hand
 (sometimes called snipping tool),
@@ -21,21 +25,22 @@ Shrinkshot uses a simple solution:
 just simply ignores 2-2 pixels at the borders
 (see `IGNORED_MARGIN_SIZE`).
 
+### Avoid cutting small areas
+
 Texts are padded with empty pixel lines.
 Cutting these identical lines reduces the padding to 1 pixel height,
 which makes the text ugly and too dense.
-To avoid this, the program does not cut small areas
-(see `MINIMUM_SHRINK_SIZE`).
+Vertical letter spacing can be ruined even more.
+To avoid this issue, the program does not cut small areas
+below a certain size (see `MINIMUM_SHRINK_SIZE`).
 
-> The V1 program did not perform the conversion itself,
-but rather created the argument list for
-ImageMagick's `convert` utility,
-which was doing the actual job.
+### Avoid invisible gradients
 
-You may assign a hotkey to yout script,
-which makes a screenshot of a window,
-passing through it on shrinkshot,
-and saves it.
+Gradient and transparent window captions
+are empty areas with different pixels.
+To detect these areas, the program checks for similar
+colors, not for exactly the same
+(see `PIXEL_CHANNEL_DIFF_SUM_THRESHOLD`).
 
 ## Installation
 
@@ -51,6 +56,11 @@ $ shrinkshot screenshot.png result.png
 ```
 
 If any problem occurs, `shrinkshot` prints error messages to `stderr`.
+
+You may assign a hotkey to yout script,
+which makes a screenshot of a window,
+passing through it on shrinkshot,
+and saves it.
 
 ### Known issues
 

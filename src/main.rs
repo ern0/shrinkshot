@@ -9,7 +9,8 @@ const REQUIRED_ARG_NUMBER: usize = 3;
 type SideSize = usize;
 const IGNORED_MARGIN_SIZE: SideSize = 10;
 const MINIMUM_SIDE_SIZE: SideSize = 30;
-const MINIMUM_SHRINK_SIZE: SideSize = 15;
+const MINIMUM_SHRINK_SIZE: SideSize = 25;
+const PIXEL_CHANNEL_DIFF_SUM_THRESHOLD: i16 = 3 * 5;
 
 #[derive(Clone, Copy)]
 struct Region {
@@ -234,8 +235,17 @@ fn neighbour_bars_are_identical(
 
 fn pixels_are_similar(pixels: &[u8], index1: SideSize, index2: SideSize) -> bool {
 
-    pixels.get(index1..index1 + 3) == pixels.get(index2..index2 + 3)
+    let gray1: i16 =
+        pixels[index1] as i16 +
+        pixels[index1 + 1] as i16 +
+        pixels[index1 + 2] as i16;
 
+    let gray2: i16 =
+        pixels[index2] as i16 +
+        pixels[index2 + 1] as i16 +
+        pixels[index2 + 2] as i16;
+
+    (gray1 - gray2).abs() < PIXEL_CHANNEL_DIFF_SUM_THRESHOLD
 }
 
 fn eliminate_gaps(region_list: &mut Vec<Region>) {
