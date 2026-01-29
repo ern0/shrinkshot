@@ -46,7 +46,12 @@ colors, not for exactly the same
 
 > The V1 program required to install ImageMagick and pull `upng` submodule.
 
-Just build the app with `cargo build`,
+Yyou can install it from `crates.io`:
+```
+cargo install shrinkshot
+```
+
+You can also build the app from source with `cargo build`,
 or let `build.sh` to do it.
 
 ## Usage
