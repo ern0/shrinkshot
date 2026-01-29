@@ -327,34 +327,21 @@ fn get_last_created_file(dir_path: &Path) -> io::Result<Option<String>> {
         }
     }
 
-    Ok(last_created.and_then(|(path, _)| {
-        path.to_str().map(|s| s.to_string())
-    }))
+    Ok(
+        last_created.and_then(|(path, _,)| {
+            path.to_str().map(|s| s.to_string())
+        })
+    )
 }
 
 fn auto_filename(filename: &str) -> String {
 
-    let path = Path::new(filename);
-
-    match (path.file_stem(), path.extension()) {
-
-        (Some(_stem), Some(ext),) =>
-            format!(
-                "{}.shrnkd.{}",
-                filename.to_string(),
-                ext.to_string_lossy()
-            ),
-
-        (Some(_), None,) =>
-            format!(
-                "{}.shrnkd",
-                filename
-            ),
-
-        (None, _,) =>
-            format!(
-                "{}.shrnkd",
-                filename
-            ),
+    match filename.rfind('.') {
+        Some(dot_pos) if dot_pos > 0 => {
+            format!("{}.shrnkd{}", &filename[..dot_pos], &filename[dot_pos..])
+        },
+        _ => {
+            format!("{}.shrnkd", filename)
+        },
     }
 }
