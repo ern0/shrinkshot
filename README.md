@@ -51,8 +51,15 @@ or let `build.sh` to do it.
 
 ## Usage
 
+Shrink specified file:
 ```
 $ shrinkshot screenshot.png result.png
+```
+
+Pick last created file from a directory and
+add insert `.shrnkd` to its name:
+```
+$ shrinkshot -d ~/Screenshots
 ```
 
 If any problem occurs, `shrinkshot` prints error messages to `stderr`.
@@ -64,14 +71,8 @@ and saves it.
 
 ### Known issues
 
-#### Detection failure
-
-Checking for identical neighbour lines and columns fails on
-- noisy areas
-- gradients.
-
-It requires more sophisticated method
-than simply comparing neighbour pixels.
+- The neighbour detection is somewhat naive.
+- The program often makes text too dense.
 
 ### Algorithm enhancements
 

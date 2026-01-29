@@ -5,7 +5,7 @@ BASE=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 TEST=f
 
-$BASE/target/debug/shrinkshot \
+$BASE/target/release/shrinkshot \
     $BASE/test/${TEST}1-*.png \
     $BASE/test/${TEST}3-result.png
 

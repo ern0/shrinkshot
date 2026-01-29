@@ -1,7 +1,9 @@
 #![warn(clippy::pedantic)]
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use std::{fs, io};
 use std::env;
+use std::time::SystemTime;
 use image::{ImageBuffer, Rgba};
 
 const REQUIRED_ARG_NUMBER: usize = 3;
@@ -46,16 +48,45 @@ fn main() {
         .unwrap_or("shrinkshot");
 
     if args.len() != REQUIRED_ARG_NUMBER {
-        eprintln!("Usage: {} <source_image> <target_image>", name);
+        eprintln!("ShrinkShot - naive content-aware resize utility");
+        eprintln!("  Documentation and source: https://github.com/ern0/shrinkshot");
+        eprintln!("Usage:");
+        eprintln!("  Resize specified image: {} <source_image> <target_image>", name);
+        eprintln!("  Resize last modified image in a directory: {} -d <directory> ", name);
         std::process::exit(1);
     }
 
-    let source_path = &args[1];
-    let target_path = &args[2];
+    let (source_path, target_path,) = if &args[1] == "-d" {
 
-    let Ok(img) = image::open(Path::new(source_path)) else {
-        eprintln!("{name}: error loading file: {source_path}");
+        let last = match get_last_created_file(Path::new(&args[2])) {
+            Ok(Some(filename)) => filename,
+            Ok(None) => {
+                eprintln!("No files found in directory: {}", args[2]);
+                std::process::exit(1);
+            },
+            Err(e) => {
+                eprintln!("Error reading directory: {}", e);
+                std::process::exit(1);
+            }
+        };
+
+        (last.clone(), auto_filename(&last),)
+
+    } else {
+        (args[1].clone(), args[2].clone(),)
+    };
+
+    if source_path.contains(".shrnkd.") {
+        eprintln!("{name}: Looks like it's already shrinked: {source_path}");
         std::process::exit(1);
+    }
+
+    let img = match image::open(&source_path) {
+        Ok(img) => img,
+        Err(e) => {
+            eprintln!("{name}: error loading file: {source_path}: {e}");
+            std::process::exit(1);
+        }
     };
 
     let (original_width, origial_height) = (
@@ -72,7 +103,7 @@ fn main() {
         pixels
     ).expect("Failed to create image from pixel data");
 
-    let Ok(()) = new_img.save(Path::new(target_path)) else {
+    let Ok(()) = new_img.save(Path::new(&target_path)) else {
         eprintln!("{name}: error saving file: {target_path}");
         std::process::exit(1);
     };
@@ -265,5 +296,65 @@ fn eliminate_gaps(region_list: &mut Vec<Region>) {
         if (1..MINIMUM_SHRINK_SIZE).contains(&gap) {
             region_list[i].length += gap;
         }
+    }
+}
+
+fn get_last_created_file(dir_path: &Path) -> io::Result<Option<String>> {
+    let mut last_created: Option<(PathBuf, SystemTime)> = None;
+
+    for entry in fs::read_dir(dir_path)? {
+
+        let entry = entry?;
+        let path = entry.path();
+
+        if !path.is_file() {
+            continue;
+        }
+
+        let metadata = fs::metadata(&path)?;
+
+        if let Ok(created) = metadata.created() {
+            match &last_created {
+                None => {
+                    last_created = Some((path.clone(), created));
+                }
+                Some((_, last_time)) => {
+                    if created > *last_time {
+                        last_created = Some((path.clone(), created));
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(last_created.and_then(|(path, _)| {
+        path.to_str().map(|s| s.to_string())
+    }))
+}
+
+fn auto_filename(filename: &str) -> String {
+
+    let path = Path::new(filename);
+
+    match (path.file_stem(), path.extension()) {
+
+        (Some(_stem), Some(ext),) =>
+            format!(
+                "{}.shrnkd.{}",
+                filename.to_string(),
+                ext.to_string_lossy()
+            ),
+
+        (Some(_), None,) =>
+            format!(
+                "{}.shrnkd",
+                filename
+            ),
+
+        (None, _,) =>
+            format!(
+                "{}.shrnkd",
+                filename
+            ),
     }
 }
