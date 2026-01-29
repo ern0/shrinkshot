@@ -2,12 +2,13 @@
 name = "shrinkshot"
 version = "2.0.0"
 edition = "2024"
-exclude = [
-    "setup.sh",
-]
-license-file = "COPYRIGHT"
 description = "Naive content-aware resize utility"
+categories = [ "command-line-utilities", "multimedia::images", ]
+keywords = [ "screenshot", "image-resize", "image-processing", ]
+readme = "README.md"
+license-file = "COPYRIGHT"
 repository = "https://github.com/ern0/shrinkshot"
+exclude = [ "setup.sh", ]
 
 [dependencies]
 image = "0.24"
