@@ -6,6 +6,8 @@ empty areas of a PNG image
 in order to make it smaller
 without resizing its content.
 
+*Official release: [crates.io](https://crates.io/crates/shrinkshot).*
+
 ## Features
 
 ### Basic
@@ -46,7 +48,7 @@ colors, not for exactly the same
 
 > The V1 program required to install ImageMagick and pull `upng` submodule.
 
-Yyou can install it from `crates.io`:
+You can install it from `crates.io`:
 ```
 cargo install shrinkshot
 ```
